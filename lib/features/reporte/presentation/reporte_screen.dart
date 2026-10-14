@@ -33,12 +33,22 @@ class ReporteScreen extends ConsumerStatefulWidget {
 
 class _ReporteScreenState extends ConsumerState<ReporteScreen> {
   final _mapa = MapController();
-  late final _placa = TextEditingController(text: ref.read(reporteControllerProvider).borrador.placa);
-  late final _direccion = TextEditingController(text: ref.read(reporteControllerProvider).borrador.direccion);
-  late final _referencia = TextEditingController(text: ref.read(reporteControllerProvider).borrador.referencia);
-  late final _descripcion = TextEditingController(text: ref.read(reporteControllerProvider).borrador.descripcion);
+  late final TextEditingController _placa;
+  late final TextEditingController _direccion;
+  late final TextEditingController _referencia;
+  late final TextEditingController _descripcion;
   final _buscar = TextEditingController();
   bool _enviando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final b = ref.read(reporteControllerProvider).borrador;
+    _placa = TextEditingController(text: b.placa);
+    _direccion = TextEditingController(text: b.direccion);
+    _referencia = TextEditingController(text: b.referencia);
+    _descripcion = TextEditingController(text: b.descripcion);
+  }
 
   ReporteController get _ctrl => ref.read(reporteControllerProvider.notifier);
 
@@ -106,11 +116,13 @@ class _ReporteScreenState extends ConsumerState<ReporteScreen> {
     final b = ref.read(reporteControllerProvider).borrador;
     try {
       final reporte = await ref.read(reporteRepositoryProvider).enviar(b);
+      if (!mounted) return;
       ref.invalidate(misReportesProvider);
       ref.invalidate(incidentesProvider);
       _ctrl.reiniciar();
       if (mounted) context.go('/reporte/enviado/${reporte.id}');
     } on SinConexionException {
+      if (!mounted) return;
       _ctrl.reiniciar();
       if (mounted) context.go('/reporte/sin-conexion');
     } finally {

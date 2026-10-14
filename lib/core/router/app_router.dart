@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -20,12 +19,14 @@ import '../../features/inicio/presentation/inicio_screen.dart';
 import '../../features/inicio/presentation/notificaciones_screen.dart';
 import '../../features/inicio/presentation/sos_screen.dart';
 import '../../features/mapa/presentation/mapa_screen.dart';
+import '../../features/perfil/presentation/cuenta_screens.dart';
+import '../../features/perfil/presentation/mis_reportes_screen.dart';
 import '../../features/perfil/presentation/perfil_screen.dart';
+import '../../features/perfil/presentation/vehiculos_screens.dart';
+import '../../features/perfil/presentation/zonas_screens.dart';
 import '../../features/reporte/presentation/reporte_estado_screens.dart';
 import '../../features/reporte/presentation/reporte_screen.dart';
 import '../../widgets/app_shell.dart';
-import '../../widgets/pantalla_proximamente.dart';
-import '../constants/app_colors.dart';
 
 /// Rutas sin sesión.
 const _rutasPublicas = {'/login', '/registro', '/recuperar', '/verificacion-autoridad'};
@@ -36,16 +37,25 @@ const _rutasPorRol = <String, Rol>{
   '/reporte': Rol.ciudadano,
   '/mis-reportes': Rol.ciudadano,
   '/sos': Rol.ciudadano,
+  '/perfil/vehiculos': Rol.ciudadano,
+  '/perfil/zonas': Rol.ciudadano,
   '/dev': Rol.dev,
   '/autoridad': Rol.autoridad,
 };
 
 /// Calcula la redirección según el estado de sesión y el rol.
-String? redireccionPorRol(AuthState auth, String ubicacion) {
-  if (!auth.inicializado) return ubicacion == '/splash' ? null : '/splash';
+/// [destino] es la ruta pedida originalmente (se conserva al pasar por el Splash al recargar).
+String? redireccionPorRol(AuthState auth, String ubicacion, {String? destino}) {
+  if (!auth.inicializado) {
+    if (ubicacion == '/splash') return null;
+    return ubicacion == '/' ? '/splash' : '/splash?desde=${Uri.encodeQueryComponent(destino ?? ubicacion)}';
+  }
   final usuario = auth.usuario;
   if (usuario == null) return _rutasPublicas.contains(ubicacion) ? null : '/login';
   if (auth.mostrarPermisos) return ubicacion == '/permisos' ? null : '/permisos';
+  if (ubicacion == '/splash' && destino != null && destino.startsWith('/') && !destino.startsWith('/splash')) {
+    return redireccionPorRol(auth, Uri.parse(destino).path) ?? destino;
+  }
   if (ubicacion == '/splash' || ubicacion == '/' || ubicacion == '/permisos' || _rutasPublicas.contains(ubicacion)) {
     return usuario.rol.rutaInicio;
   }
@@ -65,7 +75,11 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
     refreshListenable: refrescar,
-    redirect: (context, state) => redireccionPorRol(ref.read(authControllerProvider), state.matchedLocation),
+    redirect: (context, state) => redireccionPorRol(
+      ref.read(authControllerProvider),
+      state.matchedLocation,
+      destino: state.matchedLocation == '/splash' ? state.uri.queryParameters['desde'] : state.uri.toString(),
+    ),
     routes: [
       GoRoute(path: '/', redirect: (_, _) => '/splash'),
       GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
@@ -115,14 +129,27 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(path: ':id', pageBuilder: (_, s) => pagina(s, DetalleAlertaScreen(id: s.pathParameters['id']!))),
             ],
           ),
+          GoRoute(path: '/mis-reportes', pageBuilder: (_, s) => pagina(s, const MisReportesScreen())),
           GoRoute(
-            path: '/mis-reportes',
-            pageBuilder: (_, s) => pagina(
-              s,
-              const PantallaProximamente(titulo: 'Mis reportes', icono: TablerIcons.file_text, color: AppColors.amarillo),
-            ),
+            path: '/perfil',
+            pageBuilder: (_, s) => pagina(s, const PerfilScreen()),
+            routes: [
+              GoRoute(path: 'editar', pageBuilder: (_, s) => pagina(s, const EditarPerfilScreen())),
+              GoRoute(path: 'ajustes', pageBuilder: (_, s) => pagina(s, const AjustesScreen())),
+              GoRoute(path: 'privacidad', pageBuilder: (_, s) => pagina(s, const PrivacidadScreen())),
+              GoRoute(path: 'ayuda', pageBuilder: (_, s) => pagina(s, const AyudaScreen())),
+              GoRoute(
+                path: 'vehiculos',
+                pageBuilder: (_, s) => pagina(s, const VehiculosScreen()),
+                routes: [GoRoute(path: 'agregar', pageBuilder: (_, s) => pagina(s, const AgregarVehiculoScreen()))],
+              ),
+              GoRoute(
+                path: 'zonas',
+                pageBuilder: (_, s) => pagina(s, const ZonasFavoritasScreen()),
+                routes: [GoRoute(path: 'agregar', pageBuilder: (_, s) => pagina(s, const AgregarZonaScreen()))],
+              ),
+            ],
           ),
-          GoRoute(path: '/perfil', pageBuilder: (_, s) => pagina(s, const PerfilScreen())),
           GoRoute(path: '/dev', pageBuilder: (_, s) => pagina(s, const DevScreen())),
           GoRoute(path: '/autoridad', pageBuilder: (_, s) => pagina(s, const AutoridadScreen())),
         ],

@@ -9,7 +9,7 @@ void main() {
 
   group('redireccionPorRol', () {
     test('muestra splash mientras no se inicializa', () {
-      expect(redireccionPorRol(const AuthState(), '/inicio'), '/splash');
+      expect(redireccionPorRol(const AuthState(), '/inicio'), '/splash?desde=%2Finicio');
       expect(redireccionPorRol(const AuthState(), '/splash'), isNull);
     });
 
@@ -30,6 +30,12 @@ void main() {
       final dev = AuthState(inicializado: true, usuario: u(Rol.dev));
       expect(redireccionPorRol(dev, '/inicio'), '/dev');
       expect(redireccionPorRol(dev, '/sos'), '/dev');
+    });
+
+    test('conserva la ruta pedida al recargar', () {
+      final auth = AuthState(inicializado: true, usuario: u(Rol.ciudadano));
+      expect(redireccionPorRol(auth, '/splash', destino: '/perfil/zonas'), '/perfil/zonas');
+      expect(redireccionPorRol(auth, '/splash', destino: '/dev'), '/inicio');
     });
 
     test('rutas públicas y permisos', () {

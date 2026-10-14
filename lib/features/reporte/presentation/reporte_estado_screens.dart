@@ -12,7 +12,7 @@ import '../../../core/theme/paleta.dart';
 import '../../../widgets/app_shell.dart';
 import '../../../widgets/botones.dart';
 import '../../../widgets/encabezado_escritorio.dart';
-import '../../../widgets/etiqueta_riesgo.dart' show Pildora;
+import '../../../widgets/pantalla_secundaria.dart' show pildoraEstado;
 import '../../../widgets/tarjeta.dart';
 import '../../mapa/domain/modelos_mapa.dart';
 import '../data/reporte_repository.dart';
@@ -193,7 +193,7 @@ class EstadoReporteScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    Pildora(r.estado.etiqueta, fondo: p.suaveAmarillo, color: p.textoMedio),
+                    pildoraEstado(context, r.estado),
                   ],
                 ),
               ),

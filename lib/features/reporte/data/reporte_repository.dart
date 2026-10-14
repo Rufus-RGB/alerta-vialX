@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../mapa/domain/modelos_mapa.dart';
 import '../domain/reporte.dart';
 
 /// Contrato de reportes. La API real (FastAPI) recibirá el POST /reportes.
@@ -46,22 +47,27 @@ class MockReporteRepository implements ReporteRepository {
     }
   }
 
-  Reporte _crear(String id, BorradorReporte b) {
+  Reporte _crear(String id, BorradorReporte b, {EstadoReporte estado = EstadoReporte.enAtencion}) {
     String hora(Duration d) {
       final t = b.fecha.add(d);
       final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
       return '$h:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'a. m.' : 'p. m.'}';
     }
 
+    final cerrado = estado == EstadoReporte.cerrado || estado == EstadoReporte.recuperado;
     return Reporte(
       id: id,
       borrador: b,
-      estado: EstadoReporte.enAtencion,
+      estado: estado,
       seguimiento: [
         PasoSeguimiento(titulo: 'Reporte enviado', detalle: 'Hoy · ${hora(Duration.zero)}', estado: 'hecho'),
         PasoSeguimiento(titulo: 'Recibido por la Policía', detalle: 'CAI Chapinero · ${hora(const Duration(minutes: 3))}', estado: 'hecho'),
-        PasoSeguimiento(titulo: 'En atención', detalle: 'Patrulla en camino · ${hora(const Duration(minutes: 7))}', estado: 'actual'),
-        const PasoSeguimiento(titulo: 'Caso cerrado', detalle: 'Pendiente', estado: 'pendiente'),
+        PasoSeguimiento(titulo: 'En atención', detalle: 'Patrulla en camino · ${hora(const Duration(minutes: 7))}', estado: cerrado ? 'hecho' : 'actual'),
+        PasoSeguimiento(
+          titulo: estado == EstadoReporte.recuperado ? 'Vehículo recuperado' : 'Caso cerrado',
+          detalle: cerrado ? 'Cerrado por la autoridad' : 'Pendiente',
+          estado: cerrado ? 'hecho' : 'pendiente',
+        ),
       ],
     );
   }
@@ -86,17 +92,25 @@ class MockReporteRepository implements ReporteRepository {
   @override
   Future<List<Reporte>> misReportes() async {
     await Future<void>.delayed(const Duration(milliseconds: 250));
-    final ejemplo = _crear(
-      'AV-2048',
-      BorradorReporte(
-        marca: 'Bajaj',
-        modelo: 'Pulsar NS200',
-        placa: 'ABC12D',
-        color: 'Negra',
-        fecha: DateTime.now().subtract(const Duration(minutes: 12)),
-      ),
-    );
-    return [..._enviados.values.toList().reversed, if (!_enviados.containsKey('AV-2048')) ejemplo];
+    final ahora = DateTime.now();
+    BorradorReporte b(TipoVehiculo t, String marca, String modelo, String placa, String barrio, int dias) => BorradorReporte(
+          vehiculo: t,
+          marca: marca,
+          modelo: modelo,
+          placa: placa,
+          color: 'Negra',
+          barrio: barrio,
+          direccion: barrio,
+          fecha: ahora.subtract(Duration(days: dias, minutes: dias == 0 ? 12 : 0)),
+        );
+    final ejemplos = [
+      _crear('AV-2048', b(TipoVehiculo.moto, 'Bajaj', 'Pulsar NS200', 'ABC12D', 'Chapinero', 0)),
+      _crear('AV-1990', b(TipoVehiculo.auto, 'Chevrolet', 'Onix', 'HGT567', 'Suba', 12), estado: EstadoReporte.recuperado),
+      _crear('AV-1874', b(TipoVehiculo.moto, 'Bajaj', 'Pulsar NS200', 'ABC12D', 'Teusaquillo', 26), estado: EstadoReporte.cerrado),
+      _crear('AV-1702', b(TipoVehiculo.auto, 'Chevrolet', 'Spark', 'JKL432', 'Kennedy', 45), estado: EstadoReporte.cerrado),
+      _crear('AV-1655', b(TipoVehiculo.moto, 'Yamaha', 'FZ 2.0', 'XYZ98E', 'Bosa', 63), estado: EstadoReporte.cerrado),
+    ];
+    return [..._enviados.values.toList().reversed, ...ejemplos.where((e) => !_enviados.containsKey(e.id))];
   }
 
   @override

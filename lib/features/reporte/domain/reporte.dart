@@ -108,7 +108,8 @@ enum EstadoReporte {
   enviado('Enviado'),
   recibido('Recibido'),
   enAtencion('En atención'),
-  cerrado('Caso cerrado');
+  recuperado('Recuperado'),
+  cerrado('Cerrado');
 
   const EstadoReporte(this.etiqueta);
   final String etiqueta;

@@ -48,7 +48,9 @@ class _MapaScreenState extends ConsumerState<MapaScreen> {
     super.initState();
     if (widget.busqueda != null) {
       _buscar.text = widget.busqueda!;
-      WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(busquedaMapaProvider.notifier).cambiar(widget.busqueda!));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.read(busquedaMapaProvider.notifier).cambiar(widget.busqueda!);
+      });
     }
   }
 
@@ -71,7 +73,7 @@ class _MapaScreenState extends ConsumerState<MapaScreen> {
 
   /// Centra el mapa según los parámetros de la ruta (lat/lng, incidente o zona).
   void _aplicarFoco() {
-    if (!_listo) return;
+    if (!_listo || !mounted) return;
     if (widget.foco != null) {
       _mapa.move(widget.foco!, 14);
     } else if (widget.incidenteId != null) {
