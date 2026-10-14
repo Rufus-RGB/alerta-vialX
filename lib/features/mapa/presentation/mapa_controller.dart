@@ -14,10 +14,21 @@ class FiltroVehiculoController extends Notifier<FiltroVehiculo> {
   void cambiar(FiltroVehiculo f) => state = f;
 }
 
-/// Incidentes filtrados por tipo de vehículo.
+/// Texto de búsqueda del mapa (placa, barrio o dirección).
+final busquedaMapaProvider = NotifierProvider<BusquedaMapaController, String>(BusquedaMapaController.new);
+
+class BusquedaMapaController extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void cambiar(String q) => state = q;
+}
+
+/// Incidentes filtrados por tipo de vehículo y búsqueda.
 final incidentesFiltradosProvider = Provider<AsyncValue<List<IncidenteHurto>>>((ref) {
   final filtro = ref.watch(filtroVehiculoProvider);
-  return ref.watch(incidentesProvider).whenData((l) => l.where((i) => filtro.incluye(i.vehiculo)).toList());
+  final q = ref.watch(busquedaMapaProvider);
+  return ref.watch(incidentesProvider).whenData((l) => l.where((i) => filtro.incluye(i.vehiculo) && i.coincide(q)).toList());
 });
 
 /// Obtiene la ubicación actual pidiendo permiso (solo en primer plano).

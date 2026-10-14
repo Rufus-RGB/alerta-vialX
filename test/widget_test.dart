@@ -29,6 +29,12 @@ void main() {
       expect(redireccionPorRol(ciudadano, '/mapa'), isNull);
       final dev = AuthState(inicializado: true, usuario: u(Rol.dev));
       expect(redireccionPorRol(dev, '/inicio'), '/dev');
+      expect(redireccionPorRol(dev, '/sos'), '/dev');
+    });
+
+    test('rutas públicas y permisos', () {
+      expect(redireccionPorRol(const AuthState(inicializado: true), '/registro'), isNull);
+      expect(redireccionPorRol(AuthState(inicializado: true, usuario: u(Rol.ciudadano), mostrarPermisos: true), '/inicio'), '/permisos');
     });
   });
 

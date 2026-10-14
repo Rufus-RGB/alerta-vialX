@@ -1,0 +1,24 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="68" height="80" viewBox="0 0 68 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Pin hurto 1" filter="url(#filter0_d_0_42)">
+<g clip-path="url(#clip0_0_42)">
+<path id="Trazo" d="M34 11C23.5 11 15 19.3 15 29.6C15 43.5 34 61 34 61C34 61 53 43.5 53 29.6C53 19.3 44.5 11 34 11Z" fill="#FF383C" stroke="white" stroke-width="2"/>
+<path id="Trazo_2" d="M34 21L43 37H25L34 21Z" fill="white" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+<path id="Trazo_3" d="M35 27C35 26.4477 34.5523 26 34 26C33.4477 26 33 26.4477 33 27V31C33 31.5523 33.4477 32 34 32C34.5523 32 35 31.5523 35 31V27Z" fill="#FF383C"/>
+<path id="Trazo_4" d="M34 35.7C34.6627 35.7 35.2 35.1627 35.2 34.5C35.2 33.8373 34.6627 33.3 34 33.3C33.3373 33.3 32.8 33.8373 32.8 34.5C32.8 35.1627 33.3373 35.7 34 35.7Z" fill="#FF383C"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_d_0_42" x="0" y="0" width="68" height="80" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="4"/>
+<feGaussianBlur stdDeviation="7"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_42"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_42" result="shape"/>
+</filter>
+<clipPath id="clip0_0_42">
+<rect width="40" height="52" fill="white" transform="translate(14 10)"/>
+</clipPath>
+</defs>
+</svg>
