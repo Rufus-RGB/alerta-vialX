@@ -8,6 +8,7 @@ App de seguridad vial para Bogotá en Flutter, para **Web (PWA)** y **Android**,
 
 | Sprint | Rama | Contenido |
 |---|---|---|
+| 4 | `sprint-4` | Panel DEV (celular y PC) y sus 12 herramientas: Usuarios, Moderación, Autoridades, Zonas de riesgo, Notificaciones masivas, CAI y puntos, Analítica, Registros, Estado del servicio, Roles y permisos, Exportar datos, Sistema |
 | 3 | `sprint-3` | Perfil (celular y PC), Editar perfil, Ajustes (tema Claro/Oscuro/Sistema), Mis reportes con filtros y estado vacío, Mis vehículos, Agregar vehículo, Zonas favoritas, Agregar zona (mapa + radio), Privacidad y datos, Centro de ayuda (preguntas frecuentes) |
 | 2 | `sprint-2` | Reportar hurto (pasos 1–3 en celular, un solo paso en tablet/PC), Reporte enviado, Estado del reporte, Sin conexión (reporte pendiente + reintentar), Alertas, Detalle de alerta, Configurar alertas (persistido) |
 | 1 | `sprint-1` | Tema y componentes base, HUD con curva del SOS, riel (tablet) y barra lateral (PC), Splash, Carga, Login con rol, Crear cuenta, Recuperar contraseña, Permisos, Verificación de autoridad, Inicio, Menú lateral, Notificaciones, Mapa, Detalle de reporte, Emergencia SOS |
@@ -105,7 +106,8 @@ lib/
     reporte/    Asistente de reporte, enviado, estado y sin conexión
     alertas/    Alertas, detalle y configuración
     perfil/     Perfil, edición, ajustes, mis reportes, vehículos, zonas favoritas, privacidad y ayuda
-    dev/ autoridad/   (siguientes sprints)
+    dev/        Panel DEV y 12 herramientas de administración
+    autoridad/  (siguiente sprint)
 ```
 
 ## Decisiones tomadas (no definidas en el diseño)
@@ -138,4 +140,8 @@ lib/
   `shared_preferences` (mock); el nivel de riesgo de una zona nueva se calcula con las zonas de riesgo cercanas.
   Cambiar contraseña, descargar datos y el chat de soporte son simulados. Eliminar cuenta cierra la sesión.
 - **Recarga en web:** al recargar, la ruta pedida se conserva a través del Splash (`/splash?desde=…`).
+- **DEV (Sprint 4):** las acciones (aprobar/rechazar, bloquear, cambiar rol, editar zonas, permisos, envíos,
+  exportaciones) cambian el estado en memoria (mock) y se reinician al recargar. En celular el panel lista las 12
+  herramientas (el Figma de celular muestra 6; las otras 6 solo tienen diseño de PC y se adaptaron a una columna).
+  Descargar exportaciones y "Agregar CAI"/"Nuevo rol" quedan para la API.
 - **Ramas:** cada sprint se sube a su rama `sprint-N`, creada desde la anterior.

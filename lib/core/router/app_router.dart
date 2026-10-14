@@ -14,7 +14,10 @@ import '../../features/auth/presentation/registro_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/auth/presentation/verificacion_autoridad_screen.dart';
 import '../../features/autoridad/presentation/autoridad_screen.dart';
+import '../../features/dev/presentation/dev_gestion_screens.dart';
+import '../../features/dev/presentation/dev_operacion_screens.dart';
 import '../../features/dev/presentation/dev_screen.dart';
+import '../../features/dev/presentation/dev_sistema_screens.dart';
 import '../../features/inicio/presentation/inicio_screen.dart';
 import '../../features/inicio/presentation/notificaciones_screen.dart';
 import '../../features/inicio/presentation/sos_screen.dart';
@@ -150,7 +153,24 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          GoRoute(path: '/dev', pageBuilder: (_, s) => pagina(s, const DevScreen())),
+          GoRoute(
+            path: '/dev',
+            pageBuilder: (_, s) => pagina(s, const DevScreen()),
+            routes: [
+              GoRoute(path: 'usuarios', pageBuilder: (_, s) => pagina(s, const UsuariosAdminScreen())),
+              GoRoute(path: 'moderacion', pageBuilder: (_, s) => pagina(s, const ModeracionScreen())),
+              GoRoute(path: 'autoridades', pageBuilder: (_, s) => pagina(s, const AutoridadesAdminScreen())),
+              GoRoute(path: 'zonas', pageBuilder: (_, s) => pagina(s, const ZonasAdminScreen())),
+              GoRoute(path: 'notificaciones', pageBuilder: (_, s) => pagina(s, const NotificacionesMasivasScreen())),
+              GoRoute(path: 'cai', pageBuilder: (_, s) => pagina(s, const CaiAdminScreen())),
+              GoRoute(path: 'analitica', pageBuilder: (_, s) => pagina(s, const AnaliticaScreen())),
+              GoRoute(path: 'registros', pageBuilder: (_, s) => pagina(s, const RegistrosScreen())),
+              GoRoute(path: 'estado', pageBuilder: (_, s) => pagina(s, const EstadoServicioScreen())),
+              GoRoute(path: 'roles', pageBuilder: (_, s) => pagina(s, const RolesScreen())),
+              GoRoute(path: 'exportar', pageBuilder: (_, s) => pagina(s, const ExportarScreen())),
+              GoRoute(path: 'sistema', pageBuilder: (_, s) => pagina(s, const SistemaScreen())),
+            ],
+          ),
           GoRoute(path: '/autoridad', pageBuilder: (_, s) => pagina(s, const AutoridadScreen())),
         ],
       ),
