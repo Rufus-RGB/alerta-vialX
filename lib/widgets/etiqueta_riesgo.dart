@@ -8,7 +8,7 @@ enum NivelRiesgo {
   alto('Alto Riesgo', 'Alto', AppColors.rojo),
   medio('Riesgo Medio', 'Medio', AppColors.amarillo),
   bajo('Riesgo Bajo', 'Bajo', AppColors.verdeExito),
-  info('Info', 'Info', AppColors.verdeExito);
+  info('Información', 'Info', AppColors.verdeExito);
 
   const NivelRiesgo(this.etiqueta, this.corta, this.color);
   final String etiqueta;

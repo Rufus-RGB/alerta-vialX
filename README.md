@@ -8,6 +8,7 @@ App de seguridad vial para Bogotá en Flutter, para **Web (PWA)** y **Android**,
 
 | Sprint | Rama | Contenido |
 |---|---|---|
+| 2 | `sprint-2` | Reportar hurto (pasos 1–3 en celular, un solo paso en tablet/PC), Reporte enviado, Estado del reporte, Sin conexión (reporte pendiente + reintentar), Alertas, Detalle de alerta, Configurar alertas (persistido) |
 | 1 | `sprint-1` | Tema y componentes base, HUD con curva del SOS, riel (tablet) y barra lateral (PC), Splash, Carga, Login con rol, Crear cuenta, Recuperar contraseña, Permisos, Verificación de autoridad, Inicio, Menú lateral, Notificaciones, Mapa, Detalle de reporte, Emergencia SOS |
 
 ## Requisitos
@@ -100,7 +101,9 @@ lib/
     auth/       Splash/Carga, Login, Crear cuenta, Recuperar, Permisos, Verificación de autoridad
     inicio/     Inicio (celular y panel tablet/PC), Notificaciones, Emergencia SOS
     mapa/       Mapa (flutter_map + OSM), detalle de reporte, filtros, búsqueda, mi ubicación
-    reporte/ alertas/ perfil/ dev/ autoridad/   (siguientes sprints)
+    reporte/    Asistente de reporte, enviado, estado y sin conexión
+    alertas/    Alertas, detalle y configuración
+    perfil/ dev/ autoridad/   (siguientes sprints)
 ```
 
 ## Decisiones tomadas (no definidas en el diseño)
@@ -124,4 +127,9 @@ lib/
   Las fuentes se descargan en tiempo de ejecución.
 - **Android:** `compileSdk`/`targetSdk` 36; permisos `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`
   (solo primer plano). El ícono de Android es el de Flutter por defecto.
+- **Sin conexión (Sprint 2):** antes de enviar, el repositorio hace una petición ligera con `dio`; si falla,
+  el reporte se guarda en `shared_preferences` y se muestra la pantalla "Sin conexión" con "Reintentar".
+- **Ubicación del reporte:** tocar el mapa mueve el pin y nombra la localidad más cercana (sin geocodificación
+  externa); la dirección es editable. La búsqueda acepta nombres de localidades.
+- **Placas:** se validan con el formato colombiano (ABC123 autos / ABC12D motos).
 - **Ramas:** cada sprint se sube a su rama `sprint-N`, creada desde la anterior.

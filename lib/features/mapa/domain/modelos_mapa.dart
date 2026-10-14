@@ -92,3 +92,32 @@ String haceTiempo(DateTime fecha, {bool mayuscula = false}) {
               : 'hace ${d.inDays} d';
   return mayuscula ? '${texto[0].toUpperCase()}${texto.substring(1)}' : texto;
 }
+
+/// Centros aproximados de las localidades de Bogotá (para nombrar un punto del mapa).
+const localidadesBogota = <String, LatLng>{
+  'Usaquén': LatLng(4.7030, -74.0300),
+  'Chapinero': LatLng(4.6483, -74.0630),
+  'Santa Fe': LatLng(4.6090, -74.0710),
+  'San Cristóbal': LatLng(4.5700, -74.0850),
+  'Usme': LatLng(4.4750, -74.1260),
+  'Tunjuelito': LatLng(4.5760, -74.1300),
+  'Bosa': LatLng(4.6186, -74.1906),
+  'Kennedy': LatLng(4.6286, -74.1569),
+  'Fontibón': LatLng(4.6780, -74.1430),
+  'Engativá': LatLng(4.7069, -74.1150),
+  'Suba': LatLng(4.7420, -74.0830),
+  'Barrios Unidos': LatLng(4.6680, -74.0750),
+  'Teusaquillo': LatLng(4.6380, -74.0780),
+  'Los Mártires': LatLng(4.6040, -74.0880),
+  'Antonio Nariño': LatLng(4.5890, -74.0990),
+  'Puente Aranda': LatLng(4.6170, -74.1110),
+  'La Candelaria': LatLng(4.5960, -74.0730),
+  'Rafael Uribe Uribe': LatLng(4.5700, -74.1150),
+  'Ciudad Bolívar': LatLng(4.5097, -74.1522),
+};
+
+/// Nombre de la localidad más cercana a [punto].
+String localidadCercana(LatLng punto) {
+  const d = Distance();
+  return localidadesBogota.entries.reduce((a, b) => d(punto, a.value) <= d(punto, b.value) ? a : b).key;
+}

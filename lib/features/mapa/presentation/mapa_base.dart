@@ -52,11 +52,7 @@ class MapaBase extends StatelessWidget {
         onTap: onTapMapa == null ? null : (_, _) => onTapMapa!(),
       ),
       children: [
-        TileLayer(
-          urlTemplate: AppConstants.osmTileUrl,
-          userAgentPackageName: AppConstants.userAgentPackage,
-          tileBuilder: (context, tile, image) => ColorFiltered(colorFilter: oscuro ? _filtroOscuro : _filtroClaro, child: tile),
-        ),
+        capaTiles(context),
         CircleLayer(
           circles: [
             for (final z in zonas)
@@ -101,6 +97,16 @@ class MapaBase extends StatelessWidget {
           attributions: [TextSourceAttribution('OpenStreetMap contributors')],
         ),
       ],
+    );
+  }
+
+  /// Capa de tiles OSM con el filtro de color del tema actual.
+  static TileLayer capaTiles(BuildContext context) {
+    final oscuro = context.esOscuro;
+    return TileLayer(
+      urlTemplate: AppConstants.osmTileUrl,
+      userAgentPackageName: AppConstants.userAgentPackage,
+      tileBuilder: (context, tile, image) => ColorFiltered(colorFilter: oscuro ? _filtroOscuro : _filtroClaro, child: tile),
     );
   }
 

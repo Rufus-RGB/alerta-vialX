@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../features/alertas/presentation/alertas_screen.dart';
+import '../../features/alertas/presentation/configurar_alertas_screen.dart';
 import '../../features/auth/domain/usuario.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/login_screen.dart';
@@ -20,6 +21,7 @@ import '../../features/inicio/presentation/notificaciones_screen.dart';
 import '../../features/inicio/presentation/sos_screen.dart';
 import '../../features/mapa/presentation/mapa_screen.dart';
 import '../../features/perfil/presentation/perfil_screen.dart';
+import '../../features/reporte/presentation/reporte_estado_screens.dart';
 import '../../features/reporte/presentation/reporte_screen.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/pantalla_proximamente.dart';
@@ -96,8 +98,23 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(path: '/notificaciones', pageBuilder: (_, s) => pagina(s, const NotificacionesScreen())),
           GoRoute(path: '/sos', pageBuilder: (_, s) => pagina(s, const SosScreen())),
-          GoRoute(path: '/reporte', pageBuilder: (_, s) => pagina(s, const ReporteScreen())),
-          GoRoute(path: '/alertas', pageBuilder: (_, s) => pagina(s, const AlertasScreen())),
+          GoRoute(
+            path: '/reporte',
+            pageBuilder: (_, s) => pagina(s, const ReporteScreen()),
+            routes: [
+              GoRoute(path: 'enviado/:id', pageBuilder: (_, s) => pagina(s, ReporteEnviadoScreen(id: s.pathParameters['id']!))),
+              GoRoute(path: 'estado/:id', pageBuilder: (_, s) => pagina(s, EstadoReporteScreen(id: s.pathParameters['id']!))),
+              GoRoute(path: 'sin-conexion', pageBuilder: (_, s) => pagina(s, const SinConexionScreen())),
+            ],
+          ),
+          GoRoute(
+            path: '/alertas',
+            pageBuilder: (_, s) => pagina(s, const AlertasScreen()),
+            routes: [
+              GoRoute(path: 'configurar', pageBuilder: (_, s) => pagina(s, const ConfigurarAlertasScreen())),
+              GoRoute(path: ':id', pageBuilder: (_, s) => pagina(s, DetalleAlertaScreen(id: s.pathParameters['id']!))),
+            ],
+          ),
           GoRoute(
             path: '/mis-reportes',
             pageBuilder: (_, s) => pagina(

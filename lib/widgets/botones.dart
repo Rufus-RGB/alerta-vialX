@@ -16,11 +16,15 @@ class BotonPrincipal extends StatelessWidget {
     this.color = AppColors.rojo,
     this.alto = 52,
     this.tamanoTexto = 18,
+    this.iconoDerecha = false,
   });
 
   final String texto;
   final VoidCallback? onPressed;
   final IconData? icono;
+
+  /// Dibuja el ícono después del texto ("Siguiente →").
+  final bool iconoDerecha;
   final bool cargando;
   final Color color;
   final double alto;
@@ -46,8 +50,9 @@ class BotonPrincipal extends StatelessWidget {
             : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (icono != null) ...[Icon(icono, size: tamanoTexto + 4, color: sobre), const SizedBox(width: 8)],
+                  if (icono != null && !iconoDerecha) ...[Icon(icono, size: tamanoTexto + 4, color: sobre), const SizedBox(width: 8)],
                   Flexible(child: Text(texto, overflow: TextOverflow.ellipsis)),
+                  if (icono != null && iconoDerecha) ...[const SizedBox(width: 8), Icon(icono, size: tamanoTexto + 6, color: sobre)],
                 ],
               ),
       ),
