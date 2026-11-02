@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/paleta.dart';
 import '../../../widgets/botones.dart';
 import '../../../widgets/campos.dart';
+import '../data/auth_repository.dart';
 import 'auth_controller.dart';
 import 'pantalla_acceso.dart';
 
@@ -51,6 +52,10 @@ class _RegistroScreenState extends ConsumerState<RegistroScreen> {
             celular: _celular.text,
             clave: _clave.text,
           );
+    } on ConfirmacionPendiente catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), duration: const Duration(seconds: 6)));
+      context.go('/login');
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
     } finally {

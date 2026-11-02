@@ -86,7 +86,9 @@ class ZonasFavoritasScreen extends ConsumerWidget {
                     Row(
                       children: [
                         const SizedBox(width: 62),
-                        Expanded(child: Text('Avisarme', style: Txt.n(13, color: p.textoSecundario))),
+                        Expanded(
+                          child: Text('Avisarme', style: Txt.n(13, color: p.textoSecundario)),
+                        ),
                         Switch(value: z.avisar, onChanged: (_) => ref.read(zonasFavoritasProvider.notifier).alternarAviso(z.id)),
                       ],
                     ),
@@ -146,25 +148,32 @@ class _AgregarZonaScreenState extends ConsumerState<AgregarZonaScreen> {
     return NivelRiesgo.bajo;
   }
 
-  void _guardar() {
+  Future<void> _guardar() async {
     if (_nombre.text.trim().isEmpty || _direccion.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Escribe el nombre y la dirección de la zona.')));
       return;
     }
-    ref.read(zonasFavoritasProvider.notifier).agregar(
-          ZonaFavorita(
-            id: 'z${DateTime.now().millisecondsSinceEpoch}',
-            nombre: _nombre.text.trim(),
-            direccion: _direccion.text.trim(),
-            tipo: _tipo,
-            punto: _punto,
-            radioKm: _radio,
-            avisar: _avisar,
-            nivel: _nivelPara(_punto),
-          ),
-        );
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Zona guardada.'), backgroundColor: AppColors.verdeExito));
-    context.canPop() ? context.pop() : context.go('/perfil/zonas');
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(zonasFavoritasProvider.notifier)
+          .agregar(
+            ZonaFavorita(
+              id: 'z${DateTime.now().millisecondsSinceEpoch}',
+              nombre: _nombre.text.trim(),
+              direccion: _direccion.text.trim(),
+              tipo: _tipo,
+              punto: _punto,
+              radioKm: _radio,
+              avisar: _avisar,
+              nivel: _nivelPara(_punto),
+            ),
+          );
+      messenger.showSnackBar(const SnackBar(content: Text('Zona guardada.'), backgroundColor: AppColors.verdeExito));
+      if (mounted) context.canPop() ? context.pop() : context.go('/perfil/zonas');
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('No se pudo guardar: $e')));
+    }
   }
 
   @override
@@ -190,19 +199,29 @@ class _AgregarZonaScreenState extends ConsumerState<AgregarZonaScreen> {
                   ),
                   children: [
                     MapaBase.capaTiles(context),
-                    CircleLayer(circles: [
-                      CircleMarker(
-                        point: _punto,
-                        radius: _radio * 1000,
-                        useRadiusInMeter: true,
-                        color: AppColors.amarillo.withValues(alpha: 0.18),
-                        borderColor: AppColors.amarillo,
-                        borderStrokeWidth: 2,
-                      ),
-                    ]),
-                    MarkerLayer(markers: [
-                      Marker(point: _punto, width: 120, height: 92, alignment: const Alignment(0, -0.25), child: PinConEtiqueta(etiqueta: _nombre.text.isEmpty ? 'Zona' : _nombre.text)),
-                    ]),
+                    CircleLayer(
+                      circles: [
+                        CircleMarker(
+                          point: _punto,
+                          radius: _radio * 1000,
+                          useRadiusInMeter: true,
+                          color: AppColors.amarillo.withValues(alpha: 0.18),
+                          borderColor: AppColors.amarillo,
+                          borderStrokeWidth: 2,
+                        ),
+                      ],
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: _punto,
+                          width: 120,
+                          height: 92,
+                          alignment: const Alignment(0, -0.25),
+                          child: PinConEtiqueta(etiqueta: _nombre.text.isEmpty ? 'Zona' : _nombre.text),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 Positioned(
@@ -252,7 +271,9 @@ class _AgregarZonaScreenState extends ConsumerState<AgregarZonaScreen> {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Radio de aviso', style: Txt.nb(15, color: p.texto))),
+                  Expanded(
+                    child: Text('Radio de aviso', style: Txt.nb(15, color: p.texto)),
+                  ),
                   Text('${_radio.toStringAsFixed(_radio % 1 == 0 ? 0 : 1)} km', style: Txt.nb(15, color: p.texto)),
                 ],
               ),
@@ -268,7 +289,9 @@ class _AgregarZonaScreenState extends ConsumerState<AgregarZonaScreen> {
               Divider(color: p.divisor),
               Row(
                 children: [
-                  Expanded(child: Text('Avisarme de incidentes', style: Txt.nb(15, color: p.texto))),
+                  Expanded(
+                    child: Text('Avisarme de incidentes', style: Txt.nb(15, color: p.texto)),
+                  ),
                   Switch(value: _avisar, onChanged: (v) => setState(() => _avisar = v)),
                 ],
               ),

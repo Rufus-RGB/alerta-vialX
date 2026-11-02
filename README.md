@@ -68,6 +68,20 @@ flutter analyze
 flutter test
 ```
 
+## Supabase y Vercel
+
+Sin claves de Supabase la app funciona con datos de ejemplo. Con claves usa Supabase para login, reportes
+(fotos en Storage), mapa, alertas, perfil y panel DEV.
+
+- Esquema: `supabase/migrations/20261102000000_esquema_inicial.sql` · datos iniciales: `supabase/seed.sql`.
+- Local: copia `config/supabase.example.json` a `config/supabase.json` con tus claves y corre
+  `flutter run -d chrome --dart-define-from-file=config/supabase.json`.
+- Vercel: `vercel.json` instala Flutter 3.47.7 y compila `build/web` con las variables `SUPABASE_URL` y
+  `SUPABASE_ANON_KEY`.
+- Cuenta DEV: regístrate en la app y luego en SQL: `update perfiles set rol='dev' where correo='tu@correo';`
+- Recuperar contraseña con Supabase usa código de 6 dígitos: en Authentication → Emails → "Reset password"
+  agrega `{{ .Token }}` a la plantilla.
+
 ## Acceso de demostración
 
 El login es simulado (`MockAuthRepository`): **cualquier correo con `@` y cualquier contraseña** funcionan.

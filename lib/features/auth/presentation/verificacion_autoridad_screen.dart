@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/paleta.dart';
 import '../../../widgets/botones.dart';
 import '../../../widgets/campos.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../data/auth_repository.dart';
 import 'pantalla_acceso.dart';
 
@@ -24,7 +25,9 @@ class VerificacionAutoridadScreen extends ConsumerStatefulWidget {
 
 class _VerificacionAutoridadScreenState extends ConsumerState<VerificacionAutoridadScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nombre = TextEditingController();
   final _correo = TextEditingController();
+  final _clave = TextEditingController();
   final _placa = TextEditingController();
   String _unidad = unidadesAutoridad.first;
   String? _carne;
@@ -32,14 +35,16 @@ class _VerificacionAutoridadScreenState extends ConsumerState<VerificacionAutori
 
   @override
   void dispose() {
+    _nombre.dispose();
     _correo.dispose();
+    _clave.dispose();
     _placa.dispose();
     super.dispose();
   }
 
   Future<void> _subirCarne() async {
     final archivo = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1600);
-    if (archivo != null) setState(() => _carne = archivo.name);
+    if (archivo != null) setState(() => _carne = ArchivosLocales.registrar(archivo));
   }
 
   Future<void> _enviar() async {
@@ -49,12 +54,25 @@ class _VerificacionAutoridadScreenState extends ConsumerState<VerificacionAutori
       return;
     }
     setState(() => _cargando = true);
-    await ref.read(authRepositoryProvider).solicitarCuentaAutoridad(correo: _correo.text, placa: _placa.text, unidad: _unidad);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Solicitud enviada. Te avisaremos por correo cuando sea aprobada.'), backgroundColor: AppColors.verdeExito),
-    );
-    context.go('/login');
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(authRepositoryProvider).solicitarCuentaAutoridad(
+            nombre: _nombre.text,
+            correo: _correo.text,
+            clave: _clave.text,
+            placa: _placa.text,
+            unidad: _unidad,
+            carne: _carne!,
+          );
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Solicitud enviada. Te avisaremos por correo cuando sea aprobada.'), backgroundColor: AppColors.verdeExito),
+      );
+      if (mounted) context.go('/login');
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
   }
 
   @override
@@ -88,12 +106,30 @@ class _VerificacionAutoridadScreenState extends ConsumerState<VerificacionAutori
             ),
             const SizedBox(height: 12),
             CampoEtiquetado(
+              etiqueta: 'Nombre y grado',
+              hint: 'Ej: Sgto. Castro',
+              icono: TablerIcons.user,
+              controller: _nombre,
+              validator: (v) => (v == null || v.trim().length < 3) ? 'Escribe tu nombre' : null,
+            ),
+            const SizedBox(height: 6),
+            CampoEtiquetado(
               etiqueta: 'Correo institucional',
               hint: 'nombre@policia.gov.co',
               icono: TablerIcons.mail,
               controller: _correo,
               teclado: TextInputType.emailAddress,
               validator: (v) => (v == null || !v.trim().endsWith('.gov.co')) ? 'Usa tu correo institucional (.gov.co)' : null,
+            ),
+            const SizedBox(height: 6),
+            CampoEtiquetado(
+              etiqueta: 'Contraseña',
+              hint: 'Mínimo 8 caracteres',
+              icono: TablerIcons.lock,
+              controller: _clave,
+              contrasena: true,
+              autofill: const [AutofillHints.newPassword],
+              validator: (v) => (v == null || v.length < 8) ? 'Mínimo 8 caracteres' : null,
             ),
             const SizedBox(height: 6),
             CampoEtiquetado(
@@ -126,7 +162,7 @@ class _VerificacionAutoridadScreenState extends ConsumerState<VerificacionAutori
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_carne ?? 'Sube tu carné institucional', overflow: TextOverflow.ellipsis, style: Txt.nb(14, color: p.texto)),
+                        Text(_carne == null ? 'Sube tu carné institucional' : ArchivosLocales.nombre(_carne!), overflow: TextOverflow.ellipsis, style: Txt.nb(14, color: p.texto)),
                         Text('Foto o PDF · máx. 5 MB', style: Txt.n(12, color: p.textoSecundario)),
                       ],
                     ),

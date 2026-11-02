@@ -6,7 +6,9 @@ import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/supabase/supabase_config.dart';
 import '../../../widgets/etiqueta_riesgo.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../../mapa/domain/modelos_mapa.dart';
 
 // ---------------- Modelos ----------------
@@ -162,18 +164,40 @@ const preguntasFrecuentes = <(String, String)>[
   ('¿Cómo cambio mi tipo de usuario?', 'Las cuentas de autoridad se solicitan desde "¿Eres Policía o SIJIN?" al crear la cuenta y las aprueba un administrador.'),
 ];
 
-// ---------------- Persistencia (mock local con SharedPreferences) ----------------
+// ---------------- Persistencia ----------------
+// Sin Supabase: SharedPreferences (datos de ejemplo del diseño).
+// Con Supabase: tablas `vehiculos` y `zonas_favoritas` del usuario con sesión (RLS).
 
 abstract class _ListaPersistida<T> extends Notifier<List<T>> {
   String get clave;
+  String get tabla;
   List<T> get iniciales;
   Map<String, Object?> aJson(T v);
   T deJson(Map<String, Object?> j);
+  Map<String, Object?> aFila(T v);
+  T deFila(Map<String, dynamic> f);
+
+  bool get _remoto => SupabaseConfig.habilitado;
 
   @override
   List<T> build() {
+    // Se recarga al cambiar de usuario.
+    final uid = ref.watch(authControllerProvider.select((s) => s.usuario?.id));
+    if (_remoto) {
+      if (uid != null) _cargarRemoto();
+      return const [];
+    }
     _cargar();
     return iniciales;
+  }
+
+  Future<void> _cargarRemoto() async {
+    try {
+      final filas = await supa.from(tabla).select().order('creado_en');
+      state = [for (final f in filas) deFila(f)];
+    } catch (_) {
+      // Sin conexión: se mantiene la lista vacía.
+    }
   }
 
   Future<void> _cargar() async {
@@ -185,8 +209,27 @@ abstract class _ListaPersistida<T> extends Notifier<List<T>> {
 
   Future<void> guardar(List<T> lista) async {
     state = lista;
+    if (_remoto) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(clave, jsonEncode(lista.map(aJson).toList()));
+  }
+
+  Future<void> _insertar(T v) async {
+    if (!_remoto) return guardar([...state, v]);
+    final fila = await supa.from(tabla).insert(aFila(v)).select().single();
+    state = [...state, deFila(fila)];
+  }
+
+  Future<void> _borrar(String id, bool Function(T) donde) async {
+    final antes = state;
+    state = state.where((e) => !donde(e)).toList();
+    if (!_remoto) return guardar(state);
+    try {
+      await supa.from(tabla).delete().eq('id', id);
+    } catch (e) {
+      state = antes;
+      rethrow;
+    }
   }
 }
 
@@ -195,6 +238,9 @@ final vehiculosProvider = NotifierProvider<VehiculosController, List<Vehiculo>>(
 class VehiculosController extends _ListaPersistida<Vehiculo> {
   @override
   String get clave => 'perfil_vehiculos';
+
+  @override
+  String get tabla => 'vehiculos';
 
   @override
   List<Vehiculo> get iniciales => const [
@@ -218,8 +264,38 @@ class VehiculosController extends _ListaPersistida<Vehiculo> {
   @override
   Vehiculo deJson(Map<String, Object?> j) => Vehiculo.fromJson(j);
 
-  Future<void> agregar(Vehiculo v) => guardar([...state, v]);
-  Future<void> eliminar(String id) => guardar(state.where((v) => v.id != id).toList());
+  @override
+  Map<String, Object?> aFila(Vehiculo v) => {
+        'tipo': v.tipo.name,
+        'marca': v.marca,
+        'modelo': v.modelo,
+        'anio': v.anio,
+        'placa': v.placa,
+        'color': v.color,
+        'foto': v.foto,
+      };
+
+  @override
+  Vehiculo deFila(Map<String, dynamic> f) => Vehiculo.fromJson({...f, 'id': f['id'].toString()});
+
+  /// Sube la foto (si hay) al bucket `vehiculos` y guarda el vehículo.
+  Future<void> agregar(Vehiculo v) async {
+    final foto = v.foto != null && _remoto ? await ArchivosLocales.subir('vehiculos', v.foto!) : v.foto;
+    await _insertar(Vehiculo(
+      id: v.id,
+      tipo: v.tipo,
+      marca: v.marca,
+      modelo: v.modelo,
+      anio: v.anio,
+      placa: v.placa,
+      color: v.color,
+      reportes: v.reportes,
+      estado: v.estado,
+      foto: foto,
+    ));
+  }
+
+  Future<void> eliminar(String id) => _borrar(id, (v) => v.id == id);
 }
 
 final zonasFavoritasProvider = NotifierProvider<ZonasFavoritasController, List<ZonaFavorita>>(ZonasFavoritasController.new);
@@ -227,6 +303,9 @@ final zonasFavoritasProvider = NotifierProvider<ZonasFavoritasController, List<Z
 class ZonasFavoritasController extends _ListaPersistida<ZonaFavorita> {
   @override
   String get clave => 'perfil_zonas';
+
+  @override
+  String get tabla => 'zonas_favoritas';
 
   @override
   List<ZonaFavorita> get iniciales => const [
@@ -255,9 +334,31 @@ class ZonasFavoritasController extends _ListaPersistida<ZonaFavorita> {
   @override
   ZonaFavorita deJson(Map<String, Object?> j) => ZonaFavorita.fromJson(j);
 
-  Future<void> agregar(ZonaFavorita z) => guardar([...state, z]);
-  Future<void> alternarAviso(String id) => guardar([for (final z in state) z.id == id ? z.copyWith(avisar: !z.avisar) : z]);
-  Future<void> eliminar(String id) => guardar(state.where((z) => z.id != id).toList());
+  @override
+  Map<String, Object?> aFila(ZonaFavorita z) => {
+        'nombre': z.nombre,
+        'direccion': z.direccion,
+        'tipo': z.tipo.name,
+        'lat': z.punto.latitude,
+        'lng': z.punto.longitude,
+        'radio_km': z.radioKm,
+        'avisar': z.avisar,
+        'nivel': z.nivel.name,
+      };
+
+  @override
+  ZonaFavorita deFila(Map<String, dynamic> f) => ZonaFavorita.fromJson({...f, 'id': f['id'].toString(), 'radio': f['radio_km']});
+
+  Future<void> agregar(ZonaFavorita z) => _insertar(z);
+
+  Future<void> alternarAviso(String id) async {
+    final zona = state.firstWhere((z) => z.id == id);
+    state = [for (final z in state) z.id == id ? z.copyWith(avisar: !z.avisar) : z];
+    if (!_remoto) return guardar(state);
+    await supa.from(tabla).update({'avisar': !zona.avisar}).eq('id', id);
+  }
+
+  Future<void> eliminar(String id) => _borrar(id, (z) => z.id == id);
 }
 
 final privacidadProvider = NotifierProvider<PrivacidadController, Privacidad>(PrivacidadController.new);

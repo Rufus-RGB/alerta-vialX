@@ -37,7 +37,7 @@ void mostrarCaisCercanos(BuildContext context) {
                   for (final c in lista)
                     FilaLista(
                       titulo: c.nombre,
-                      subtitulo: '${c.direccion} · ${c.distanciaKm.toStringAsFixed(1).replaceAll('.', ',')} km',
+                      subtitulo: c.distanciaKm > 0 ? '${c.direccion} · ${c.distanciaKm.toStringAsFixed(1).replaceAll('.', ',')} km' : c.direccion,
                       leading: const IconoCirculo(icono: TablerIcons.shield, fondo: AppColors.azulAutoridad),
                       trailing: Icon(TablerIcons.chevron_right, color: p.textoSecundario),
                       divisor: c != lista.last,

@@ -49,3 +49,7 @@ app.*.map.json
 
 # Claude Code local
 .claude/
+
+# Claves locales de Supabase
+config/supabase.json
+.vercel

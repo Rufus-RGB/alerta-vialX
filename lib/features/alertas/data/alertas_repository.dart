@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../widgets/etiqueta_riesgo.dart';
 import '../../mapa/domain/modelos_mapa.dart';
 
@@ -101,7 +102,7 @@ abstract interface class AlertasRepository {
   Future<List<Alerta>> alertas();
 }
 
-final alertasRepositoryProvider = Provider<AlertasRepository>((ref) => MockAlertasRepository());
+final alertasRepositoryProvider = Provider<AlertasRepository>((ref) => SupabaseConfig.habilitado ? SupabaseAlertasRepository() : MockAlertasRepository());
 final alertasProvider = FutureProvider<List<Alerta>>((ref) => ref.watch(alertasRepositoryProvider).alertas());
 
 /// Configuración persistida en SharedPreferences.
@@ -219,6 +220,41 @@ class MockAlertasRepository implements AlertasRepository {
         consejo: 'No dejes objetos de valor a la vista dentro del vehículo.',
         minutos: 215,
       ),
+    ];
+  }
+}
+
+/// Tabla `alertas` de Supabase (las más recientes primero).
+class SupabaseAlertasRepository implements AlertasRepository {
+  static String _hora(DateTime t) {
+    final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+    return '$h:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'a. m.' : 'p. m.'}';
+  }
+
+  @override
+  Future<List<Alerta>> alertas() async {
+    final filas = await supa.from('alertas').select().order('creado_en', ascending: false).limit(50);
+    return [
+      for (final f in filas)
+        () {
+          final creado = DateTime.parse(f['creado_en'] as String).toLocal();
+          return Alerta(
+            id: f['id'] as String,
+            tipo: TipoAlerta.values.byName(f['tipo'] as String),
+            titulo: f['titulo'] as String,
+            lugar: f['lugar'] as String,
+            hora: _hora(creado),
+            nivel: NivelRiesgo.values.firstWhere((n) => n.name == f['nivel'], orElse: () => NivelRiesgo.medio),
+            punto: LatLng((f['lat'] as num).toDouble(), (f['lng'] as num).toDouble()),
+            vehiculo: f['vehiculo'] == null ? null : TipoVehiculo.values.byName(f['vehiculo'] as String),
+            placa: f['placa'] as String?,
+            descripcionVehiculo: f['descripcion_vehiculo'] as String?,
+            direccion: f['direccion'] as String?,
+            distancia: f['distancia'] as String?,
+            consejo: f['consejo'] as String?,
+            minutos: DateTime.now().difference(creado).inMinutes,
+          );
+        }(),
     ];
   }
 }

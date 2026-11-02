@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../core/theme/paleta.dart';
 import '../../auth/presentation/verificacion_autoridad_screen.dart' show BordePunteado;
 import '../../mapa/domain/modelos_mapa.dart';
@@ -339,7 +340,7 @@ class SelectorFotos extends StatelessWidget {
   Future<void> _agregar(BuildContext context) async {
     if (fotos.length >= 3) return;
     final archivo = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1600, imageQuality: 80);
-    if (archivo != null) onChanged([...fotos, archivo.name]);
+    if (archivo != null) onChanged([...fotos, ArchivosLocales.registrar(archivo)]);
   }
 
   @override

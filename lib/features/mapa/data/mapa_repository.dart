@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/supabase/supabase_config.dart';
 import '../../../widgets/etiqueta_riesgo.dart';
 import '../domain/modelos_mapa.dart';
 
@@ -11,7 +12,7 @@ abstract interface class MapaRepository {
   Future<List<Cai>> cais();
 }
 
-final mapaRepositoryProvider = Provider<MapaRepository>((ref) => MockMapaRepository());
+final mapaRepositoryProvider = Provider<MapaRepository>((ref) => SupabaseConfig.habilitado ? SupabaseMapaRepository() : MockMapaRepository());
 
 final incidentesProvider = FutureProvider<List<IncidenteHurto>>((ref) => ref.watch(mapaRepositoryProvider).incidentes());
 final zonasRiesgoProvider = FutureProvider<List<ZonaRiesgo>>((ref) => ref.watch(mapaRepositoryProvider).zonasRiesgo());
@@ -71,6 +72,60 @@ class MockMapaRepository implements MapaRepository {
       Cai(nombre: 'CAI Fontanar', direccion: 'Calle 145 # 92-50, Suba', punto: LatLng(4.7480, -74.0950), telefono: '123', distanciaKm: 2.8),
       Cai(nombre: 'CAI Kennedy Central', direccion: 'Cra. 78 # 38-20 Sur', punto: LatLng(4.6290, -74.1540), telefono: '123', distanciaKm: 6.4),
       Cai(nombre: 'CAI Bosa Piamonte', direccion: 'Cl. 65 Sur # 80-10', punto: LatLng(4.6150, -74.1900), telefono: '123', distanciaKm: 9.1),
+    ];
+  }
+}
+
+/// Lee la vista pública `incidentes_publicos` y las tablas `zonas_riesgo` y `cai`.
+class SupabaseMapaRepository implements MapaRepository {
+  static NivelRiesgo _nivel(Object? n) => NivelRiesgo.values.firstWhere((e) => e.name == n, orElse: () => NivelRiesgo.medio);
+
+  @override
+  Future<List<IncidenteHurto>> incidentes() async {
+    final filas = await supa.from('incidentes_publicos').select().order('fecha', ascending: false).limit(300);
+    return [
+      for (final f in filas)
+        IncidenteHurto(
+          id: f['id'] as String,
+          titulo: f['titulo'] as String,
+          vehiculo: TipoVehiculo.values.byName(f['vehiculo'] as String),
+          punto: LatLng((f['lat'] as num).toDouble(), (f['lng'] as num).toDouble()),
+          barrio: f['barrio'] as String? ?? '',
+          fecha: DateTime.parse(f['fecha'] as String).toLocal(),
+          placa: f['placa'] as String? ?? '',
+          descripcionVehiculo: f['descripcion_vehiculo'] as String? ?? '',
+          direccion: f['direccion'] as String? ?? '',
+          nivel: _nivel(f['nivel']),
+        ),
+    ];
+  }
+
+  @override
+  Future<List<ZonaRiesgo>> zonasRiesgo() async {
+    final filas = await supa.from('zonas_riesgo').select().order('reportes_semana', ascending: false);
+    return [
+      for (final f in filas)
+        ZonaRiesgo(
+          nombre: f['nombre'] as String,
+          centro: LatLng((f['lat'] as num).toDouble(), (f['lng'] as num).toDouble()),
+          radioMetros: (f['radio_m'] as num).toDouble(),
+          nivel: _nivel(f['nivel']),
+          reportesSemana: f['reportes_semana'] as int? ?? 0,
+        ),
+    ];
+  }
+
+  @override
+  Future<List<Cai>> cais() async {
+    final filas = await supa.from('cai').select().eq('estado', 'activo').order('nombre');
+    return [
+      for (final f in filas)
+        Cai(
+          nombre: f['nombre'] as String,
+          direccion: '${f['direccion'] ?? ''}, ${f['localidad']}',
+          punto: LatLng((f['lat'] as num).toDouble(), (f['lng'] as num).toDouble()),
+          telefono: f['telefono'] as String? ?? '123',
+        ),
     ];
   }
 }

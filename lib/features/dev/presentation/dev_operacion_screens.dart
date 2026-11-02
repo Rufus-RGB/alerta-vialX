@@ -507,14 +507,14 @@ class _NotificacionesMasivasScreenState extends ConsumerState<NotificacionesMasi
 
 // ---------------- CAI y puntos ----------------
 
-class CaiAdminScreen extends StatefulWidget {
+class CaiAdminScreen extends ConsumerStatefulWidget {
   const CaiAdminScreen({super.key});
 
   @override
-  State<CaiAdminScreen> createState() => _CaiAdminScreenState();
+  ConsumerState<CaiAdminScreen> createState() => _CaiAdminScreenState();
 }
 
-class _CaiAdminScreenState extends State<CaiAdminScreen> {
+class _CaiAdminScreenState extends ConsumerState<CaiAdminScreen> {
   String _filtro = 'Todos';
   String? _sel = 'CAI Patio Bonito';
   final _mapa = MapController();
@@ -544,8 +544,9 @@ class _CaiAdminScreenState extends State<CaiAdminScreen> {
   @override
   Widget build(BuildContext context) {
     final p = context.paleta;
-    final lista = caisAdmin.where(_incluye).toList();
-    final sel = caisAdmin.where((c) => c.nombre == _sel).firstOrNull;
+    final todos = ref.watch(caisAdminProvider).value ?? const <CaiAdmin>[];
+    final lista = todos.where(_incluye).toList();
+    final sel = todos.where((c) => c.nombre == _sel).firstOrNull;
     final ancho = !context.esCelular;
     void seleccionar(CaiAdmin c) {
       setState(() => _sel = c.nombre);

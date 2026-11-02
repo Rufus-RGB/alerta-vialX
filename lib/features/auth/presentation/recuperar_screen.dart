@@ -12,9 +12,10 @@ import '../../../core/theme/paleta.dart';
 import '../../../widgets/botones.dart';
 import '../../../widgets/campos.dart';
 import '../data/auth_repository.dart';
+import 'auth_controller.dart';
 import 'pantalla_acceso.dart';
 
-/// Recuperar contraseña: correo + código de 4 dígitos con reenvío en 0:45.
+/// Recuperar contraseña: correo + código (4 dígitos en el mock, 6 con Supabase) con reenvío en 0:45.
 class RecuperarScreen extends ConsumerStatefulWidget {
   const RecuperarScreen({super.key});
 
@@ -25,8 +26,10 @@ class RecuperarScreen extends ConsumerStatefulWidget {
 class _RecuperarScreenState extends ConsumerState<RecuperarScreen> {
   final _formKey = GlobalKey<FormState>();
   final _correo = TextEditingController();
-  final _digitos = List.generate(4, (_) => TextEditingController());
-  final _focos = List.generate(4, (_) => FocusNode());
+  late final int _n = ref.read(authRepositoryProvider).digitosCodigo;
+  late final _digitos = List.generate(_n, (_) => TextEditingController());
+  late final _focos = List.generate(_n, (_) => FocusNode());
+  final _nueva = TextEditingController();
   bool _enviado = false;
   bool _cargando = false;
   int _segundos = 0;
@@ -36,6 +39,7 @@ class _RecuperarScreenState extends ConsumerState<RecuperarScreen> {
   void dispose() {
     _timer?.cancel();
     _correo.dispose();
+    _nueva.dispose();
     for (final c in _digitos) {
       c.dispose();
     }
@@ -54,29 +58,46 @@ class _RecuperarScreenState extends ConsumerState<RecuperarScreen> {
     });
   }
 
+  Future<void> _enviarCodigo() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _cargando = true);
+    try {
+      await ref.read(authRepositoryProvider).enviarCodigoRecuperacion(_correo.text);
+      if (!mounted) return;
+      setState(() => _enviado = true);
+      _iniciarConteo();
+      _focos.first.requestFocus();
+      messenger.showSnackBar(SnackBar(content: Text('Enviamos un código a ${_correo.text}')));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
+
   Future<void> _accion() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_enviado) return _enviarCodigo();
     final messenger = ScaffoldMessenger.of(context);
-    if (_enviado) {
-      final codigo = _digitos.map((c) => c.text).join();
-      if (codigo.length < 4) {
-        messenger.showSnackBar(const SnackBar(content: Text('Escribe los 4 dígitos del código.')));
-        return;
-      }
-      messenger.showSnackBar(const SnackBar(content: Text('Código verificado. Revisa tu correo para crear la nueva contraseña.')));
-      context.go('/login');
+    final codigo = _digitos.map((c) => c.text).join();
+    if (codigo.length < _n) {
+      messenger.showSnackBar(SnackBar(content: Text('Escribe los $_n dígitos del código.')));
+      return;
+    }
+    if (_nueva.text.length < 8) {
+      messenger.showSnackBar(const SnackBar(content: Text('La nueva contraseña debe tener mínimo 8 caracteres.')));
       return;
     }
     setState(() => _cargando = true);
-    await ref.read(authRepositoryProvider).enviarCodigoRecuperacion(_correo.text);
-    if (!mounted) return;
-    setState(() {
-      _cargando = false;
-      _enviado = true;
-    });
-    _iniciarConteo();
-    _focos.first.requestFocus();
-    messenger.showSnackBar(SnackBar(content: Text('Enviamos un código a ${_correo.text}')));
+    try {
+      await ref.read(authControllerProvider.notifier).recuperarClave(correo: _correo.text, codigo: codigo, nueva: _nueva.text);
+      messenger.showSnackBar(const SnackBar(content: Text('Contraseña actualizada. Inicia sesión con la nueva.'), backgroundColor: AppColors.verdeExito));
+      if (mounted) context.go('/login');
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
   }
 
   @override
@@ -122,9 +143,9 @@ class _RecuperarScreenState extends ConsumerState<RecuperarScreen> {
             Padding(padding: const EdgeInsets.only(left: 6, bottom: 4), child: Text('Código de verificación', style: Txt.r(15, color: p.texto))),
             Row(
               children: [
-                for (var i = 0; i < 4; i++) ...[
+                for (var i = 0; i < _n; i++) ...[
                   if (i > 0) const SizedBox(width: 10),
-                  Expanded(child: _Digito(controller: _digitos[i], foco: _focos[i], siguiente: i < 3 ? _focos[i + 1] : null, habilitado: _enviado)),
+                  Expanded(child: _Digito(controller: _digitos[i], foco: _focos[i], siguiente: i < _n - 1 ? _focos[i + 1] : null, habilitado: _enviado)),
                 ],
               ],
             ),
@@ -133,12 +154,23 @@ class _RecuperarScreenState extends ConsumerState<RecuperarScreen> {
               child: _segundos > 0
                   ? Text('Reenviar código en 0:${_segundos.toString().padLeft(2, '0')}', style: Txt.n(13, color: p.textoSecundario))
                   : TextButton(
-                      onPressed: _enviado ? _accion : null,
-                      child: Text(_enviado ? 'Reenviar código' : 'Te enviaremos 4 dígitos', style: Txt.n(13, color: p.textoSecundario)),
+                      onPressed: _enviado ? _enviarCodigo : null,
+                      child: Text(_enviado ? 'Reenviar código' : 'Te enviaremos $_n dígitos', style: Txt.n(13, color: p.textoSecundario)),
                     ),
             ),
+            if (_enviado) ...[
+              const SizedBox(height: 14),
+              CampoEtiquetado(
+                etiqueta: 'Nueva contraseña',
+                hint: 'Mínimo 8 caracteres',
+                icono: TablerIcons.lock,
+                controller: _nueva,
+                contrasena: true,
+                autofill: const [AutofillHints.newPassword],
+              ),
+            ],
             const SizedBox(height: 32),
-            BotonPrincipal(texto: _enviado ? 'Verificar código' : 'Enviar código', onPressed: _accion, cargando: _cargando),
+            BotonPrincipal(texto: _enviado ? 'Cambiar contraseña' : 'Enviar código', onPressed: _accion, cargando: _cargando),
             const SizedBox(height: 10),
             EnlaceTexto(pregunta: '¿La recordaste?', accion: 'Inicia sesión', onTap: () => context.go('/login')),
           ],

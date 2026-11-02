@@ -203,21 +203,21 @@ class _AnaliticaScreenState extends State<AnaliticaScreen> {
 
 // ---------------- Registros de actividad ----------------
 
-class RegistrosScreen extends StatefulWidget {
+class RegistrosScreen extends ConsumerStatefulWidget {
   const RegistrosScreen({super.key});
 
   @override
-  State<RegistrosScreen> createState() => _RegistrosScreenState();
+  ConsumerState<RegistrosScreen> createState() => _RegistrosScreenState();
 }
 
-class _RegistrosScreenState extends State<RegistrosScreen> {
+class _RegistrosScreenState extends ConsumerState<RegistrosScreen> {
   String _filtro = 'Todos';
   String _q = '';
 
   @override
   Widget build(BuildContext context) {
     final p = context.paleta;
-    final lista = registrosActividad
+    final lista = (ref.watch(registrosActividadProvider).value ?? const <RegistroActividad>[])
         .where((r) => (_filtro == 'Todos' || r.categoria == _filtro) && (_q.isEmpty || r.texto.toLowerCase().contains(_q.toLowerCase())))
         .toList();
     return PantallaSecundaria(

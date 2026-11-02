@@ -15,6 +15,7 @@ import '../../../widgets/botones.dart';
 import '../../../widgets/campos.dart';
 import '../../../widgets/pantalla_secundaria.dart';
 import '../../../widgets/tarjeta.dart';
+import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/usuario.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../mapa/domain/modelos_mapa.dart';
@@ -61,14 +62,20 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
     if (f != null) setState(() => _foto = f.name);
   }
 
-  void _guardar() {
+  Future<void> _guardar() async {
     if (!_form.currentState!.validate()) return;
-    ref.read(authControllerProvider.notifier).actualizarUsuario(
-          Usuario(id: _u.id, nombre: _nombre.text.trim(), correo: _correo.text.trim(), rol: _u.rol, celular: _celular.text.trim()),
-        );
-    ref.read(localidadPerfilProvider.notifier).cambiar(_localidad);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Perfil actualizado.'), backgroundColor: AppColors.verdeExito));
-    context.canPop() ? context.pop() : context.go('/perfil');
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(authControllerProvider.notifier).actualizarUsuario(
+            Usuario(id: _u.id, nombre: _nombre.text.trim(), correo: _correo.text.trim(), rol: _u.rol, celular: _celular.text.trim()),
+            localidad: _localidad,
+          );
+      await ref.read(localidadPerfilProvider.notifier).cambiar(_localidad);
+      messenger.showSnackBar(const SnackBar(content: Text('Perfil actualizado.'), backgroundColor: AppColors.verdeExito));
+      if (mounted) context.canPop() ? context.pop() : context.go('/perfil');
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('$e')));
+    }
   }
 
   @override
@@ -166,17 +173,19 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
 class AjustesScreen extends ConsumerWidget {
   const AjustesScreen({super.key});
 
-  Future<void> _cambiarClave(BuildContext context) async {
+  Future<void> _cambiarClave(BuildContext context, WidgetRef ref) async {
+    final nueva = TextEditingController();
+    final confirmar = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Cambiar contraseña', style: Txt.r(20, color: ctx.paleta.texto)),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(obscureText: true, decoration: InputDecoration(hintText: 'Contraseña actual')),
-            SizedBox(height: 12),
-            TextField(obscureText: true, decoration: InputDecoration(hintText: 'Nueva contraseña (mín. 8)')),
+            TextField(controller: nueva, obscureText: true, decoration: const InputDecoration(hintText: 'Nueva contraseña (mín. 8)')),
+            const SizedBox(height: 12),
+            TextField(controller: confirmar, obscureText: true, decoration: const InputDecoration(hintText: 'Repite la nueva contraseña')),
           ],
         ),
         actions: [
@@ -185,8 +194,21 @@ class AjustesScreen extends ConsumerWidget {
         ],
       ),
     );
-    if (ok == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contraseña actualizada (simulación).')));
+    final clave = nueva.text;
+    final repetida = confirmar.text;
+    nueva.dispose();
+    confirmar.dispose();
+    if (ok != true || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    if (clave.length < 8 || clave != repetida) {
+      messenger.showSnackBar(const SnackBar(content: Text('Las contraseñas no coinciden o tienen menos de 8 caracteres.')));
+      return;
+    }
+    try {
+      await ref.read(authRepositoryProvider).cambiarClave(clave);
+      messenger.showSnackBar(const SnackBar(content: Text('Contraseña actualizada.'), backgroundColor: AppColors.verdeExito));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('$e')));
     }
   }
 
@@ -242,7 +264,7 @@ class AjustesScreen extends ConsumerWidget {
           child: Column(
             children: [
               FilaOpcion(icono: TablerIcons.user, texto: 'Editar perfil', onTap: () => context.push('/perfil/editar')),
-              FilaOpcion(icono: TablerIcons.lock, texto: 'Cambiar contraseña', onTap: () => _cambiarClave(context)),
+              FilaOpcion(icono: TablerIcons.lock, texto: 'Cambiar contraseña', onTap: () => _cambiarClave(context, ref)),
               FilaOpcion(icono: TablerIcons.id, texto: 'Tipo de usuario', valor: usuario?.rol.etiqueta ?? '', divisor: false),
             ],
           ),

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/paleta.dart';
 import '../../../widgets/botones.dart';
@@ -137,10 +138,7 @@ class VehiculosScreen extends ConsumerWidget {
               Icon(TablerIcons.shield, color: p.textoSecundario),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Registrar tus vehículos acelera los reportes y ayuda a la Policía a identificarlos.',
-                  style: Txt.n(13, color: p.textoSecundario),
-                ),
+                child: Text('Registrar tus vehículos acelera los reportes y ayuda a la Policía a identificarlos.', style: Txt.n(13, color: p.textoSecundario)),
               ),
             ],
           ),
@@ -174,7 +172,7 @@ class _AgregarVehiculoScreenState extends ConsumerState<AgregarVehiculoScreen> {
     super.dispose();
   }
 
-  void _guardar() {
+  Future<void> _guardar() async {
     String? error;
     if (_marca == null || _modelo == null || _color == null) error = 'Completa marca, modelo y color.';
     if (error == null && !placaValida(_placa.text)) error = 'Placa inválida (ej: ${_tipo == TipoVehiculo.moto ? 'ABC12D' : 'ABC123'}).';
@@ -182,20 +180,27 @@ class _AgregarVehiculoScreenState extends ConsumerState<AgregarVehiculoScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
       return;
     }
-    ref.read(vehiculosProvider.notifier).agregar(
-          Vehiculo(
-            id: 'v${DateTime.now().millisecondsSinceEpoch}',
-            tipo: _tipo,
-            marca: _marca!,
-            modelo: _modelo!,
-            anio: _anio,
-            placa: _placa.text.toUpperCase(),
-            color: _color!,
-            foto: _foto,
-          ),
-        );
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vehículo guardado.'), backgroundColor: AppColors.verdeExito));
-    context.canPop() ? context.pop() : context.go('/perfil/vehiculos');
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(vehiculosProvider.notifier)
+          .agregar(
+            Vehiculo(
+              id: 'v${DateTime.now().millisecondsSinceEpoch}',
+              tipo: _tipo,
+              marca: _marca!,
+              modelo: _modelo!,
+              anio: _anio,
+              placa: _placa.text.toUpperCase(),
+              color: _color!,
+              foto: _foto,
+            ),
+          );
+      messenger.showSnackBar(const SnackBar(content: Text('Vehículo guardado.'), backgroundColor: AppColors.verdeExito));
+      if (mounted) context.canPop() ? context.pop() : context.go('/perfil/vehiculos');
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('No se pudo guardar: $e')));
+    }
   }
 
   @override
@@ -203,7 +208,12 @@ class _AgregarVehiculoScreenState extends ConsumerState<AgregarVehiculoScreen> {
     final p = context.paleta;
     final marcas = marcasPorVehiculo[_tipo]!;
     final anios = [for (var a = DateTime.now().year; a >= DateTime.now().year - 25; a--) a];
-    final modelos = _marca == null ? const <String>[] : [for (final m in marcas[_marca]!) for (final a in anios.take(6)) '$m · $a'];
+    final modelos = _marca == null
+        ? const <String>[]
+        : [
+            for (final m in marcas[_marca]!)
+              for (final a in anios.take(6)) '$m · $a',
+          ];
     return PantallaSecundaria(
       titulo: 'Agregar vehículo',
       anchoMaximo: 520,
@@ -222,10 +232,15 @@ class _AgregarVehiculoScreenState extends ConsumerState<AgregarVehiculoScreen> {
         ),
         const SizedBox(height: 16),
         const EtiquetaCampo('Marca', tamano: 15),
-        SelectorCampo(valor: _marca, opciones: marcas.keys.toList(), alto: 50, onChanged: (v) => setState(() {
-              _marca = v;
-              _modelo = null;
-            })),
+        SelectorCampo(
+          valor: _marca,
+          opciones: marcas.keys.toList(),
+          alto: 50,
+          onChanged: (v) => setState(() {
+            _marca = v;
+            _modelo = null;
+          }),
+        ),
         const SizedBox(height: 10),
         const EtiquetaCampo('Modelo y año', tamano: 15),
         SelectorCampo(
@@ -261,7 +276,7 @@ class _AgregarVehiculoScreenState extends ConsumerState<AgregarVehiculoScreen> {
             borderRadius: BorderRadius.circular(14),
             onTap: () async {
               final f = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1600);
-              if (f != null) setState(() => _foto = f.name);
+              if (f != null) setState(() => _foto = ArchivosLocales.registrar(f));
             },
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -273,7 +288,11 @@ class _AgregarVehiculoScreenState extends ConsumerState<AgregarVehiculoScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_foto ?? 'Agregar foto del vehículo', overflow: TextOverflow.ellipsis, style: Txt.nb(14, color: p.texto)),
+                        Text(
+                          _foto == null ? 'Agregar foto del vehículo' : ArchivosLocales.nombre(_foto!),
+                          overflow: TextOverflow.ellipsis,
+                          style: Txt.nb(14, color: p.texto),
+                        ),
                         Text('Ayuda a identificarlo si lo roban', style: Txt.n(12, color: p.textoSecundario)),
                       ],
                     ),
