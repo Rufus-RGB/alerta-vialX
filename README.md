@@ -15,7 +15,7 @@ App de seguridad vial para Bogotá en Flutter, para **Web (PWA)** y **Android**,
 
 ## Instalar en un PC nuevo
 
-En PowerShell (sin administrador) instala Git, Android Studio, VS Code, Chrome, Node.js, Flutter 3.47.7, clona el repo en `C:\proyectoslerta-vialX` y crea `config/supabase.json`:
+En PowerShell (sin administrador) instala Git, Android Studio, VS Code, Chrome, Node.js, Flutter 3.47.7, clona el repo en `C:\proyectos\alerta-vialX` y crea `config/supabase.json`:
 
 ```powershell
 irm https://raw.githubusercontent.com/Rufus-RGB/alerta-vialX/main/scripts/instalar_portatil.ps1 | iex
