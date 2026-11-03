@@ -8,7 +8,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// `SUPABASE_URL` y la clave pública `SUPABASE_ANON_KEY` (sirve la "anon" o la "publishable"). Si faltan, la app usa los repositorios de ejemplo (mock),
 /// así se puede seguir trabajando sin backend.
 abstract final class SupabaseConfig {
-  static const url = String.fromEnvironment('SUPABASE_URL');
+  static const _urlCruda = String.fromEnvironment('SUPABASE_URL');
+
+  /// Solo el origen (https://xxx.supabase.co): ignora rutas como /rest/v1/ pegadas por error.
+  static String get url {
+    final u = Uri.tryParse(_urlCruda.trim());
+    return (u == null || !u.hasScheme) ? _urlCruda.trim() : u.origin;
+  }
+
   static const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
   static bool get habilitado => url.isNotEmpty && anonKey.isNotEmpty;
