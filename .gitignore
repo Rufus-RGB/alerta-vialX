@@ -53,3 +53,8 @@ app.*.map.json
 # Claves locales de Supabase
 config/supabase.json
 .vercel
+
+# Firma de Android
+android/key.properties
+*.jks
+*.keystore
