@@ -13,6 +13,18 @@ App de seguridad vial para Bogotá en Flutter, para **Web (PWA)** y **Android**,
 | 2 | `sprint-2` | Reportar hurto (pasos 1–3 en celular, un solo paso en tablet/PC), Reporte enviado, Estado del reporte, Sin conexión (reporte pendiente + reintentar), Alertas, Detalle de alerta, Configurar alertas (persistido) |
 | 1 | `sprint-1` | Tema y componentes base, HUD con curva del SOS, riel (tablet) y barra lateral (PC), Splash, Carga, Login con rol, Crear cuenta, Recuperar contraseña, Permisos, Verificación de autoridad, Inicio, Menú lateral, Notificaciones, Mapa, Detalle de reporte, Emergencia SOS |
 
+## Instalar en un PC nuevo
+
+En PowerShell (sin administrador) instala Git, Android Studio, VS Code, Chrome, Node.js, Flutter 3.47.7, clona el repo en `C:\proyectoslerta-vialX` y crea `config/supabase.json`:
+
+```powershell
+irm https://raw.githubusercontent.com/Rufus-RGB/alerta-vialX/main/scripts/instalar_portatil.ps1 | iex
+```
+
+La primera vez se detiene para que abras Android Studio y descargues el SDK (asistente "Standard"); luego se vuelve a correr el mismo comando. El script es seguro de repetir.
+
+Para firmar en Play Store copia también, por USB o Drive, `android/app/alerta-vial.jks` y `android/key.properties` (no están en GitHub).
+
 ## Requisitos
 
 - Flutter 3.47+ (Dart 3.13+)

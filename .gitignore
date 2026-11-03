@@ -58,3 +58,4 @@ config/supabase.json
 android/key.properties
 *.jks
 *.keystore
+entregas/
